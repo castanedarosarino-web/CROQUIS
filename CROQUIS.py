@@ -1,57 +1,69 @@
 import streamlit as st
 import json
 from fpdf import FPDF
-import base64
+import io
 
-def crear_pdf_final(imagen_croquis):
+# 1. Función para armar el PDF "CROQUIS DEMOSTRATIVO"
+def generar_pdf_croquis(imagen_bytes):
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, "ANEXO: CROQUIS DE INSPECCIÓN OCULAR", ln=True, align='C')
     
-    # Insertar el croquis generado por la IA
-    # Usamos la imagen que ya está en memoria
-    pdf.image(imagen_croquis, x=10, y=30, w=180)
+    # Encabezado Oficial
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "POLICIA DE LA PROVINCIA DE SANTA FE", ln=True, align='C')
+    pdf.ln(10)
     
-    # Retorno binario directo para evitar AttributeError en Python 3.14
-    return pdf.output()
-
-st.title("Módulo de Recepción e Impresión - SVI")
-
-# 1. CARGA DEL ARCHIVO JSON (Generado por la IA)
-archivo_json = st.file_uploader("Cargar JSON del hecho", type=['json'])
-
-if archivo_json:
-    # Leer el contenido del JSON
-    datos_hecho = json.load(archivo_json)
-    st.success("✅ Datos del hecho cargados correctamente.")
+    # Título que pediste
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, "CROQUIS DEMOSTRATIVO", ln=True, align='C')
+    pdf.ln(10)
     
-    # Mostramos un resumen rápido para el actante
-    st.info(f"Procedimiento: {datos_hecho.get('tipo', 'N/A')} | Origen: {archivo_json.name}")
+    # Insertar la imagen (la ajusta al ancho de la hoja)
+    if imagen_bytes:
+        img_temp = io.BytesIO(imagen_bytes.getvalue())
+        pdf.image(img_temp, x=10, w=190)
+    
+    # Pie de autoría
+    pdf.set_y(-30)
+    pdf.set_font("Arial", 'I', 10)
+    pdf.cell(0, 10, "Documento generado por Sub-Comisario Castañeda Juan", align='R')
+    
+    return pdf.output(dest='S').encode('latin-1', errors='replace')
 
-    # Necesitamos la imagen del croquis para el PDF
-    # (Asumiendo que se carga o se referencia aquí)
-    archivo_imagen = st.file_uploader("Cargar imagen del croquis (AI)", type=['png', 'jpg', 'jpeg'])
+# --- INTERFAZ DEL BLOQUE CROQUIS ---
+st.title("📐 Módulo Croquis S.I.V.")
+st.write("Suba la imagen generada por la IA para habilitar las opciones de exportación.")
 
-    if archivo_imagen:
-        st.image(archivo_imagen, caption="Croquis listo para procesar")
+# Campo para ingresar la imagen
+img_file = st.file_uploader("🖼️ Pegar o subir imagen del croquis:", type=['jpg', 'png', 'jpeg'])
 
-        st.markdown("---")
-        col1, col2 = st.columns(2)
+if img_file:
+    st.image(img_file, caption="Imagen cargada correctamente", use_container_width=True)
+    st.write("---")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # BOTÓN 1: Enviar JSON al Actante
+        if st.button("📤 Enviar JSON al Actante"):
+            datos_json = {
+                "titulo": "CROQUIS DEMOSTRATIVO",
+                "autor": "Sub-Comisario Castañeda Juan",
+                "estado": "Integrado"
+            }
+            # Simulación de envío de datos
+            st.json(datos_json)
+            st.success("✅ Datos enviados al Actante")
 
-        # BOTÓN 1: VIAJAR AL ACTANTE (Lógica de integración SVI)
-        with col1:
-            if st.button("🚀 Enviar datos al Actante"):
-                # Aquí iría tu lógica de st.session_state o base de datos
-                st.session_state['datos_listos'] = True
-                st.toast("Datos enviados al bloque del actante")
+    with col2:
+        # BOTÓN 2: Descargar PDF
+        pdf_bytes = generar_pdf_croquis(img_file)
+        st.download_button(
+            label="📥 Descargar PDF (CROQUIS DEMOSTRATIVO)",
+            data=pdf_bytes,
+            file_name="Croquis_Demostrativo.pdf",
+            mime="application/pdf"
+        )
 
-        # BOTÓN 2: DESCARGA PDF PARA IMPRESIÓN
-        with col2:
-            pdf_bytes = crear_pdf_final(archivo_imagen)
-            st.download_button(
-                label="📥 Descargar PDF para Impresión",
-                data=pdf_bytes,
-                file_name=f"Croquis_{archivo_json.name}.pdf",
-                mime="application/pdf"
-            )
+else:
+    st.info("Esperando carga de imagen para habilitar funciones...")
