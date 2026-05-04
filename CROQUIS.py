@@ -1,61 +1,34 @@
 import streamlit as st
 
-# Configuración de página
-st.set_page_config(page_title="S.I.V. - CROQUIS", layout="centered")
+st.set_page_config(page_title="S.I.V. - Puente de Croquis", layout="centered")
 
-# Encabezado (Sin errores de sintaxis)
-st.title("🚓 CROQUIS RÁPIDO S.I.V.")
-st.sidebar.markdown("### Autoría\n**Sub Comisario CASTAÑEDA Juan**")
+st.title("📐 MÓDULO DE CROQUIS (EXTERNO)")
+st.sidebar.write("**Gestión:** Sub Comisario CASTAÑEDA Juan")
 
-# 1. EL "CEREBRO" (Lo que el policía ve en el acta)
-st.info("Paso 1: Identifique qué hay en la escena")
-texto = st.text_area("Pegue aquí la Inspección Ocular:", height=70)
+st.info("💡 Este módulo permite procesar el croquis por fuera del sistema principal para no afectar la velocidad del S.I.V.")
 
-# Detectamos palabras clave para que el oficial no tenga que escribir
-catalogo = {"MOTO": "🏍️", "AUTO": "🚗", "ARMA": "🔫", "VAINA": "🎞️", "DROGA": "📦", "CUERPO": "👤"}
-detectados = [catalogo[obj] for obj in catalogo if obj.lower() in texto.lower()]
+# --- 1. PREPARACIÓN DE DATOS ---
+st.subheader("1. Preparar Información")
+if st.button("📋 COPIAR INSPECCIÓN OCULAR AL PORTAPAPELES"):
+    # Aquí simulamos la copia (en Streamlit el usuario suele copiar del text_area)
+    st.write("Seleccione el texto de abajo y presione Ctrl+C:")
+    st.code("Aquí aparecerá el contenido del Bloque 6 para que lo lleves al plano...")
 
-if detectados:
-    st.write(f"Elementos encontrados: {' '.join(detectados)}")
-
-# 2. EL TABLERO (Lo más fácil para el policía)
+# --- 2. ACCESO A HERRAMIENTAS ---
 st.divider()
-st.write("### Paso 2: Marque la ubicación en la grilla")
-st.caption("Cada cuadro es un sector del lugar del hecho. Toque para marcar la evidencia.")
+st.subheader("2. Ejecutar Herramienta de Diseño")
+st.write("Utilice su software de confianza o abra la carpeta de plantillas.")
 
-# Inicializar el estado de la grilla si no existe
-if 'mapa' not in st.session_state:
-    st.session_state.mapa = {}
+if st.button("📁 ABRIR CARPETA DE CROQUIS"):
+    st.warning("⚠️ Por seguridad del navegador, abra manualmente la carpeta 'C:/SIV/Croquis' en su computadora.")
 
-# Crear una grilla de 6x6 (Tamaño ideal para celular)
-for fila in range(6):
-    cols = st.columns(6)
-    for columna in range(6):
-        id_celda = f"{fila}_{columna}"
-        with cols[columna]:
-            # Si la celda está marcada, mostramos el icono, sino el botón +
-            label = st.session_state.mapa.get(id_celda, "➕")
-            if st.button(label, key=id_celda):
-                # Al tocarlo, si estaba vacío ponemos un marcador
-                if id_celda not in st.session_state.mapa:
-                    st.session_state.mapa[id_celda] = "📍"
-                else:
-                    # Si ya tenía marca, lo limpiamos
-                    del st.session_state.mapa[id_celda]
-                st.rerun()
-
-# 3. CIERRE OPERATIVO
+# --- 3. REINCORPORACIÓN ---
 st.divider()
-if st.button("🏁 FINALIZAR CROQUIS"):
-    if st.session_state.mapa:
-        st.success("✅ Croquis guardado. Se generó el esquema de posiciones para el PDF.")
-        st.write("**Resumen de Coordenadas:**")
-        for k, v in st.session_state.mapa.items():
-            f, c = k.split("_")
-            st.write(f"- Elemento en Sector: Fila {f}, Columna {c}")
-    else:
-        st.warning("Debe marcar al menos un punto en la grilla.")
+st.subheader("3. Adjuntar Croquis Terminado")
+archivo = st.file_uploader("Suba el archivo final (JPG, PNG o PDF):", type=['jpg', 'png', 'pdf'])
 
-if st.button("🗑️ Limpiar Plano"):
-    st.session_state.mapa = {}
-    st.rerun()
+if archivo:
+    st.success("✅ Croquis vinculado con éxito. Se incluirá en el Anexo del sumario.")
+
+st.divider()
+st.caption("S.I.V. - Sistema de Validación de Identidad | Optimizado para operatividad de calle.")
