@@ -1,55 +1,67 @@
 import streamlit as st
 from fpdf import FPDF
+from PIL import Image
 
-# --- ESTA ES LA FUNCIÓN QUE TENÉS QUE PEGAR EN TU S.I.V. ---
-def modulo_inspeccion_ocular_completo():
-    st.header("📐 BLOQUE: INSPECCIÓN OCULAR Y PLANIMETRÍA")
-    st.write("---")
+# 1. CONFIGURACIÓN DE PÁGINA
+st.set_page_config(page_title="S.I.V. - Módulo de Inspección", layout="wide")
 
-    # 1. ENTRADA DE DATOS: Relato y Foto
-    st.subheader("1. Carga de Información")
-    col1, col2 = st.columns([1, 1])
+# 2. FUNCIÓN DE GENERACIÓN DE PDF (La que hace el trabajo sucio)
+class PDF(FPDF):
+    def header(self):
+        self.set_font('Arial', 'B', 12)
+        self.cell(0, 10, 'POLICÍA DE LA PROVINCIA DE SANTA FE', ln=True, align='C')
+        self.ln(5)
+
+def generar_acta_pdf(relato, imagen):
+    pdf = PDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, "ACTA DE INSPECCIÓN OCULAR Y CROQUIS", ln=True, align='C')
+    pdf.ln(10)
     
-    with col1:
-        relato = st.text_area(
-            "✍️ Redacción de la Inspección Ocular:", 
-            placeholder="Describa aquí lo observado (ej: rastro, daños, posición de elementos)...",
-            height=300,
-            key="input_relato"
+    # Insertar Relato
+    pdf.set_font("Arial", size=12)
+    pdf.multi_cell(0, 10, f"RELATO DE LO OBSERVADO:\n{relato}")
+    pdf.ln(10)
+    
+    # Insertar Imagen del Croquis
+    if imagen:
+        img = Image.open(imagen)
+        img_path = "temp_croquis.png"
+        img.save(img_path)
+        pdf.image(img_path, x=10, w=180)
+    
+    return pdf.output(dest='S').encode('latin-1', errors='replace')
+
+# 3. INTERFAZ DEL PROGRAMA (Lo que ve el oficial)
+st.title("📐 SISTEMA DE INSPECCIÓN Y PLANIMETRÍA")
+st.write("---")
+
+col1, col2 = st.columns([1, 1])
+
+with col1:
+    st.subheader("✍️ Redacción de la Inspección")
+    relato_input = st.text_area("Describa detalladamente la escena:", height=300, placeholder="Siendo la hora...")
+
+with col2:
+    st.subheader("📸 Registro Visual")
+    foto_input = st.file_uploader("Subir foto del Croquis o Escena:", type=['jpg', 'png', 'jpeg'])
+    if foto_input:
+        st.image(foto_input, caption="Vista previa del croquis", use_container_width=True)
+
+st.write("---")
+
+# 4. BOTÓN DE CIERRE Y DESCARGA
+if st.button("💾 GENERAR Y DESCARGAR ACTA INTEGRADA"):
+    if relato_input and foto_input:
+        pdf_bytes = generar_acta_pdf(relato_input, foto_input)
+        st.download_button(
+            label="📥 DESCARGAR PDF AHORA",
+            data=pdf_bytes,
+            file_name="Acta_Inspeccion_Ocular.pdf",
+            mime="application/pdf"
         )
-    
-    with col2:
-        img_file = st.file_uploader(
-            "📸 Subir Croquis o Foto de la Escena:", 
-            type=['jpg', 'png', 'jpeg'],
-            key="input_foto"
-        )
-        if img_file:
-            st.image(img_file, caption="Imagen seleccionada", use_container_width=True)
-
-    # 2. LA FUSIÓN (La vista previa que viste en el chat)
-    if relato and img_file:
-        st.write("---")
-        st.subheader("🔍 VISTA PREVIA DEL ACTA INTEGRADA")
-        
-        with st.container(border=True):
-            st.markdown(f"**RELATO DE INSPECCIÓN:**")
-            st.write(relato)
-            st.write("---")
-            st.image(img_file, caption="CROQUIS/RELEVAMIENTO ADJUNTO", use_container_width=True)
-
-        # 3. EL BOTÓN DE GUARDADO DEFINITIVO
-        if st.button("💾 CONFIRMAR E INTEGRAR AL SUMARIO FINAL"):
-            # Guardamos todo en la memoria del programa (session_state)
-            st.session_state['texto_inspeccion_final'] = relato
-            st.session_state['imagen_croquis_final'] = img_file
-            st.session_state['acta_lista'] = True
-            
-            st.success("✅ ¡Fusión realizada! Estos datos ya forman parte del acta final.")
-            st.balloons()
-    
-    elif not relato or not img_file:
-        st.info("💡 Para generar la fusión, debe completar el texto y subir una imagen.")
-
-# --- ASÍ SE LLAMA AL MÓDULO ---
-modulo_inspeccion_ocular_completo()
+        st.success("✅ Acta generada correctamente.")
+        st.balloons()
+    else:
+        st.error("⚠️ Error: Debe completar el relato y subir la foto para generar el acta.")
