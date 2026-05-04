@@ -26,7 +26,7 @@ def crear_pdf(texto, imagen_bytes):
             f.write(imagen_bytes.getbuffer())
         pdf.image("temp_croquis.png", x=10, w=180)
     
-    return pdf.output(dest='S').encode('latin-1', errors='replace')
+    return pdf.output()
 
 # --- INTERFAZ ---
 st.title("🚓 S.I.V. - Finalización de Bloque")
