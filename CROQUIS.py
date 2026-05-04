@@ -1,39 +1,55 @@
 import streamlit as st
+from fpdf import FPDF
 
-def bloque_croquis():
-    st.header("📐 BLOQUE 7 CROQUIS DEMOSTRATIVO")
+# --- ESTA ES LA FUNCIÓN QUE TENÉS QUE PEGAR EN TU S.I.V. ---
+def modulo_inspeccion_ocular_completo():
+    st.header("📐 BLOQUE: INSPECCIÓN OCULAR Y PLANIMETRÍA")
+    st.write("---")
+
+    # 1. ENTRADA DE DATOS: Relato y Foto
+    st.subheader("1. Carga de Información")
+    col1, col2 = st.columns([1, 1])
     
-    st.info("""
-    **PROCEDIMIENTO OPERATIVO:**
-    1. Realice el croquis a mano alzada o mediante el módulo externo.
-    2. Capture la fotografía del diseño.
-    3. Cargue el archivo final en este apartado para su anexado al acta.
-    """)
-
-    # --- 1. ENLACE AL SATÉLITE ---
-    st.subheader("1. Herramientas Externas")
-    col1, col2 = st.columns(2)
     with col1:
-        # Reemplaza con la URL que te dé Render para el anexo_fotos.py
-        url_fotos = "https://tu-app-de-fotos.render.com" 
-        st.link_button("🚀 ABRIR GENERADOR DE ANEXOS", url_fotos, use_container_width=True)
+        relato = st.text_area(
+            "✍️ Redacción de la Inspección Ocular:", 
+            placeholder="Describa aquí lo observado (ej: rastro, daños, posición de elementos)...",
+            height=300,
+            key="input_relato"
+        )
+    
     with col2:
-        st.caption("Use el módulo externo si necesita procesar imágenes pesadas o fotos de alta resolución.")
+        img_file = st.file_uploader(
+            "📸 Subir Croquis o Foto de la Escena:", 
+            type=['jpg', 'png', 'jpeg'],
+            key="input_foto"
+        )
+        if img_file:
+            st.image(img_file, caption="Imagen seleccionada", use_container_width=True)
 
-    st.divider()
-
-    # --- 2. CARGA DEL RESULTADO FINAL ---
-    st.subheader("2. Incorporación al Sumario")
-    archivo_croquis = st.file_uploader("Suba el Croquis Finalizado (JPG o PNG):", type=['jpg', 'png', 'jpeg'])
-
-    if archivo_croquis:
-        st.image(archivo_croquis, caption="Vista previa del croquis a anexar", width=400)
-        st.success("✅ Archivo listo para la impresión del PDF final.")
+    # 2. LA FUSIÓN (La vista previa que viste en el chat)
+    if relato and img_file:
+        st.write("---")
+        st.subheader("🔍 VISTA PREVIA DEL ACTA INTEGRADA")
         
-        # Guardamos en el estado del programa principal para el cierre del acta
-        st.session_state['croquis_final'] = archivo_croquis
+        with st.container(border=True):
+            st.markdown(f"**RELATO DE INSPECCIÓN:**")
+            st.write(relato)
+            st.write("---")
+            st.image(img_file, caption="CROQUIS/RELEVAMIENTO ADJUNTO", use_container_width=True)
 
-    # --- 3. REFERENCIA TÉCNICA ---
-    st.divider()
-    observaciones_croquis = st.text_area("Observaciones del croquis (opcional):", 
-                                        placeholder="Ej: Se deja constancia que las medidas son aproximadas...")
+        # 3. EL BOTÓN DE GUARDADO DEFINITIVO
+        if st.button("💾 CONFIRMAR E INTEGRAR AL SUMARIO FINAL"):
+            # Guardamos todo en la memoria del programa (session_state)
+            st.session_state['texto_inspeccion_final'] = relato
+            st.session_state['imagen_croquis_final'] = img_file
+            st.session_state['acta_lista'] = True
+            
+            st.success("✅ ¡Fusión realizada! Estos datos ya forman parte del acta final.")
+            st.balloons()
+    
+    elif not relato or not img_file:
+        st.info("💡 Para generar la fusión, debe completar el texto y subir una imagen.")
+
+# --- ASÍ SE LLAMA AL MÓDULO ---
+modulo_inspeccion_ocular_completo()
