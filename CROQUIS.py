@@ -1,67 +1,70 @@
 import streamlit as st
+import json
 from fpdf import FPDF
-from PIL import Image
+import base64
 
-# 1. CONFIGURACIÓN DE PÁGINA
-st.set_page_config(page_title="S.I.V. - Módulo de Inspección", layout="wide")
+# --- CONFIGURACIÓN ---
+st.set_page_config(page_title="S.I.V. - Generador de Actas", layout="wide")
 
-# 2. FUNCIÓN DE GENERACIÓN DE PDF (La que hace el trabajo sucio)
-class PDF(FPDF):
-    def header(self):
-        self.set_font('Arial', 'B', 12)
-        self.cell(0, 10, 'POLICÍA DE LA PROVINCIA DE SANTA FE', ln=True, align='C')
-        self.ln(5)
-
-def generar_acta_pdf(relato, imagen):
-    pdf = PDF()
+def crear_pdf(texto, imagen_bytes):
+    pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", 'B', 14)
+    pdf.set_font("Arial", 'B', 16)
     pdf.cell(0, 10, "ACTA DE INSPECCIÓN OCULAR Y CROQUIS", ln=True, align='C')
+    pdf.set_font("Arial", 'I', 10)
+    pdf.cell(0, 10, "Creado por Sub Comisario Castañeda Juan", ln=True, align='R')
     pdf.ln(10)
     
-    # Insertar Relato
+    # Texto de la inspección
     pdf.set_font("Arial", size=12)
-    pdf.multi_cell(0, 10, f"RELATO DE LO OBSERVADO:\n{relato}")
+    pdf.multi_cell(0, 10, f"INSPECCIÓN OCULAR:\n{texto}")
     pdf.ln(10)
     
-    # Insertar Imagen del Croquis
-    if imagen:
-        img = Image.open(imagen)
-        img_path = "temp_croquis.png"
-        img.save(img_path)
-        pdf.image(img_path, x=10, w=180)
+    # Imagen del croquis generado
+    if imagen_bytes:
+        with open("temp_croquis.png", "wb") as f:
+            f.write(imagen_bytes.getbuffer())
+        pdf.image("temp_croquis.png", x=10, w=180)
     
     return pdf.output(dest='S').encode('latin-1', errors='replace')
 
-# 3. INTERFAZ DEL PROGRAMA (Lo que ve el oficial)
-st.title("📐 SISTEMA DE INSPECCIÓN Y PLANIMETRÍA")
-st.write("---")
+# --- INTERFAZ ---
+st.title("🚓 S.I.V. - Finalización de Bloque")
+st.write("Pegue el resultado obtenido de la IA para generar los archivos oficiales.")
 
-col1, col2 = st.columns([1, 1])
+col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("✍️ Redacción de la Inspección")
-    relato_input = st.text_area("Describa detalladamente la escena:", height=300, placeholder="Siendo la hora...")
+    texto_final = st.text_area("Relato Final de la Inspección:", height=300)
 
 with col2:
-    st.subheader("📸 Registro Visual")
-    foto_input = st.file_uploader("Subir foto del Croquis o Escena:", type=['jpg', 'png', 'jpeg'])
-    if foto_input:
-        st.image(foto_input, caption="Vista previa del croquis", use_container_width=True)
+    foto_croquis = st.file_uploader("Subir el Croquis generado por la IA:", type=['jpg', 'png', 'jpeg'])
+    if foto_croquis:
+        st.image(foto_croquis, caption="Croquis listo para acta")
 
 st.write("---")
 
-# 4. BOTÓN DE CIERRE Y DESCARGA
-if st.button("💾 GENERAR Y DESCARGAR ACTA INTEGRADA"):
-    if relato_input and foto_input:
-        pdf_bytes = generar_acta_pdf(relato_input, foto_input)
-        st.download_button(
-            label="📥 DESCARGAR PDF AHORA",
-            data=pdf_bytes,
-            file_name="Acta_Inspeccion_Ocular.pdf",
-            mime="application/pdf"
-        )
-        st.success("✅ Acta generada correctamente.")
+if st.button("🚀 GENERAR ARCHIVOS (JSON Y PDF)"):
+    if texto_final and foto_croquis:
+        # 1. GENERAR JSON
+        datos_json = {
+            "autor": "Sub Comisario Castañeda Juan",
+            "inspeccion": texto_final,
+            "estado": "Validado"
+        }
+        json_str = json.dumps(datos_json, indent=4)
+        
+        # 2. GENERAR PDF
+        pdf_data = crear_pdf(texto_final, foto_croquis)
+        
+        # 3. DESCARGAS
+        st.success("✅ Archivos generados con éxito.")
+        
+        col_a, col_b = st.columns(2)
+        with col_a:
+            st.download_button("📥 Descargar PDF Oficial", data=pdf_data, file_name="Acta_Final.pdf", mime="application/pdf")
+        with col_b:
+            st.download_button("📥 Descargar Datos JSON", data=json_str, file_name="datos_inspeccion.json", mime="application/json")
         st.balloons()
     else:
-        st.error("⚠️ Error: Debe completar el relato y subir la foto para generar el acta.")
+        st.error("⚠️ Falta el texto o la imagen del croquis.")
