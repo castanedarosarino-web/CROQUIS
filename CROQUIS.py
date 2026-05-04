@@ -1,34 +1,39 @@
 import streamlit as st
 
-st.set_page_config(page_title="S.I.V. - Puente de Croquis", layout="centered")
+def bloque_croquis():
+    st.header("📐 BLOQUE 7 CROQUIS DEMOSTRATIVO")
+    
+    st.info("""
+    **PROCEDIMIENTO OPERATIVO:**
+    1. Realice el croquis a mano alzada o mediante el módulo externo.
+    2. Capture la fotografía del diseño.
+    3. Cargue el archivo final en este apartado para su anexado al acta.
+    """)
 
-st.title("📐 MÓDULO DE CROQUIS (EXTERNO)")
-st.sidebar.write("**Gestión:** Sub Comisario CASTAÑEDA Juan")
+    # --- 1. ENLACE AL SATÉLITE ---
+    st.subheader("1. Herramientas Externas")
+    col1, col2 = st.columns(2)
+    with col1:
+        # Reemplaza con la URL que te dé Render para el anexo_fotos.py
+        url_fotos = "https://tu-app-de-fotos.render.com" 
+        st.link_button("🚀 ABRIR GENERADOR DE ANEXOS", url_fotos, use_container_width=True)
+    with col2:
+        st.caption("Use el módulo externo si necesita procesar imágenes pesadas o fotos de alta resolución.")
 
-st.info("💡 Este módulo permite procesar el croquis por fuera del sistema principal para no afectar la velocidad del S.I.V.")
+    st.divider()
 
-# --- 1. PREPARACIÓN DE DATOS ---
-st.subheader("1. Preparar Información")
-if st.button("📋 COPIAR INSPECCIÓN OCULAR AL PORTAPAPELES"):
-    # Aquí simulamos la copia (en Streamlit el usuario suele copiar del text_area)
-    st.write("Seleccione el texto de abajo y presione Ctrl+C:")
-    st.code("Aquí aparecerá el contenido del Bloque 6 para que lo lleves al plano...")
+    # --- 2. CARGA DEL RESULTADO FINAL ---
+    st.subheader("2. Incorporación al Sumario")
+    archivo_croquis = st.file_uploader("Suba el Croquis Finalizado (JPG o PNG):", type=['jpg', 'png', 'jpeg'])
 
-# --- 2. ACCESO A HERRAMIENTAS ---
-st.divider()
-st.subheader("2. Ejecutar Herramienta de Diseño")
-st.write("Utilice su software de confianza o abra la carpeta de plantillas.")
+    if archivo_croquis:
+        st.image(archivo_croquis, caption="Vista previa del croquis a anexar", width=400)
+        st.success("✅ Archivo listo para la impresión del PDF final.")
+        
+        # Guardamos en el estado del programa principal para el cierre del acta
+        st.session_state['croquis_final'] = archivo_croquis
 
-if st.button("📁 ABRIR CARPETA DE CROQUIS"):
-    st.warning("⚠️ Por seguridad del navegador, abra manualmente la carpeta 'C:/SIV/Croquis' en su computadora.")
-
-# --- 3. REINCORPORACIÓN ---
-st.divider()
-st.subheader("3. Adjuntar Croquis Terminado")
-archivo = st.file_uploader("Suba el archivo final (JPG, PNG o PDF):", type=['jpg', 'png', 'pdf'])
-
-if archivo:
-    st.success("✅ Croquis vinculado con éxito. Se incluirá en el Anexo del sumario.")
-
-st.divider()
-st.caption("S.I.V. - Sistema de Validación de Identidad | Optimizado para operatividad de calle.")
+    # --- 3. REFERENCIA TÉCNICA ---
+    st.divider()
+    observaciones_croquis = st.text_area("Observaciones del croquis (opcional):", 
+                                        placeholder="Ej: Se deja constancia que las medidas son aproximadas...")
